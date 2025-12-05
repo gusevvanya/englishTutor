@@ -1,6 +1,11 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { processSessionResult, getPrompt } from '../services/AI';
-import { createTableStringsFromWords } from '../utils';
+import { getTableStringsForNewWords } from '../utils';
+import { addNewRows } from '../services/google-sheets';
+import { PAGES } from '../constants/constants';
+
+
+// TODO: set set tmeout and clear waiting status if user didn't respond for a long time
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
 
@@ -45,7 +50,14 @@ bot.onText(/\/add_new/, (msg) => {
     if (nextMsg.chat.id === chatId) {
       try {
         const rowWords = nextMsg.text?.split('\n');
-        console.log(createTableStringsFromWords(rowWords || []))
+        const wordsString = getTableStringsForNewWords(rowWords || []);
+
+        const res = await addNewRows(wordsString as string[][], PAGES.NEW);
+
+        if (!res.ok) {
+          throw new Error('Failed to add new words to Google Sheets');
+        }
+
         bot.sendMessage(msg?.chat?.id, '✅ Success!');
       } catch (err) {
         bot.sendMessage(msg?.chat?.id, err?.message || 'something went wrong!');

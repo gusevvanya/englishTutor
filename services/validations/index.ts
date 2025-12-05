@@ -1,15 +1,17 @@
 import * as z from 'zod';
-import { WordSchema } from './schemas/Word.ts';
+import { WordsArraySchema } from './schemas/Word.ts';
 import { logError } from '../loggingService.ts';
-export function parseJsonWord(word: string) {
+
+export function parseJsonWords(words: string) {
   try {
-    return WordSchema.parse(JSON.parse(word));
+    return WordsArraySchema.parse(JSON.parse(words));
   } catch (err) {
     if (err instanceof z.ZodError) {
       const errorMessage = z.prettifyError(err);
 
       throw new Error(errorMessage);
     } else if (err instanceof SyntaxError && err.message.includes('JSON')) {
+      console.error('JSON Syntax Error:', err.message);
       throw new Error('‼️Invalid JSON format!');
     } else {
       logError(err as Error);
